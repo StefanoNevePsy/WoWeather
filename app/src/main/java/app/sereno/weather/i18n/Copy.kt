@@ -232,6 +232,11 @@ class Copy(val lang: Lang) {
     val units get() = t("Unità", "Units")
     val language get() = t("Lingua", "Language")
     val reduceMotion get() = t("Riduci animazioni", "Reduce motion")
+    val chartAxes get() = t("Scala nei grafici", "Chart scale")
+    val chartAxesDetail get() = t(
+        "Mostra i valori di riferimento sull'asse verticale.",
+        "Shows reference values on the vertical axis.",
+    )
     val notifications get() = t("Notifiche", "Notifications")
     val rainAlerts get() = t("Avvisi di pioggia", "Rain alerts")
     val severeAlerts get() = t("Allerte meteo", "Severe weather alerts")

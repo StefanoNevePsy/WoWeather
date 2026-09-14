@@ -30,6 +30,8 @@ data class SerenoSettings(
     val reduceMotion: Boolean? = null,
     val rainNotifications: Boolean = false,
     val severeNotifications: Boolean = true,
+    /** Gridlines and value labels on the charts. */
+    val chartAxes: Boolean = true,
     val developerMode: Boolean = false,
     /** Overrides the real weather with a synthetic state, for design work. */
     val mockState: String? = null,
@@ -49,6 +51,7 @@ class SettingsStore(private val context: Context) {
         val reduceMotion = stringPreferencesKey("reduce_motion")
         val rainNotifications = booleanPreferencesKey("notify_rain")
         val severeNotifications = booleanPreferencesKey("notify_severe")
+        val chartAxes = booleanPreferencesKey("chart_axes")
         val developerMode = booleanPreferencesKey("developer_mode")
         val mockState = stringPreferencesKey("mock_state")
     }
@@ -67,6 +70,7 @@ class SettingsStore(private val context: Context) {
                 reduceMotion = prefs[Keys.reduceMotion]?.let { it.toBooleanStrictOrNull() },
                 rainNotifications = prefs[Keys.rainNotifications] ?: false,
                 severeNotifications = prefs[Keys.severeNotifications] ?: true,
+                chartAxes = prefs[Keys.chartAxes] ?: true,
                 developerMode = prefs[Keys.developerMode] ?: false,
                 mockState = prefs[Keys.mockState],
             )
@@ -85,6 +89,7 @@ class SettingsStore(private val context: Context) {
     }
     suspend fun setRainNotifications(value: Boolean) = edit { it[Keys.rainNotifications] = value }
     suspend fun setSevereNotifications(value: Boolean) = edit { it[Keys.severeNotifications] = value }
+    suspend fun setChartAxes(value: Boolean) = edit { it[Keys.chartAxes] = value }
     suspend fun setDeveloperMode(value: Boolean) = edit { it[Keys.developerMode] = value }
     suspend fun setMockState(value: String?) = edit { prefs ->
         if (value == null) prefs.remove(Keys.mockState) else prefs[Keys.mockState] = value

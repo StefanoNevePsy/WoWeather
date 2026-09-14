@@ -43,7 +43,10 @@ object SevereEngine {
     }
 
     private fun thunder(hours: List<BlendedHour>, copy: Copy, offset: Int): WeatherAlert? {
-        val stormy = hours.filter { WeatherCodes.condition(it.weatherCode).isThunder }
+        // The soonest contiguous episode, not every stormy hour in two days.
+        // Taking first..last across the whole window produced "from 11:00 to
+        // 11:00" — two separate afternoons collapsed into one nonsensical span.
+        val stormy = firstRun(hours) { WeatherCodes.condition(it.weatherCode).isThunder }
         if (stormy.isEmpty()) return null
         val hail = stormy.any { it.weatherCode == 96 || it.weatherCode == 99 }
         val agreement = stormy.map { it.confidence.score }.average()
@@ -64,8 +67,8 @@ object SevereEngine {
             severity = severity,
             headline = if (hail) copy.alertKind(AlertKind.Hail) else copy.alertKind(AlertKind.Thunderstorm),
             detail = copy.t(
-                "Attività temporalesca prevista dalle ${hh(from, offset)} alle ${hh(to, offset)}. ${confidenceNote(agreement, copy)}",
-                "Thunderstorm activity expected from ${hh(from, offset)} to ${hh(to, offset)}. ${confidenceNote(agreement, copy)}",
+                "Attività temporalesca prevista ${window(from, to, offset, copy)}. ${confidenceNote(agreement, copy)}",
+                "Thunderstorm activity expected ${window(from, to, offset, copy)}. ${confidenceNote(agreement, copy)}",
             ),
             startEpoch = from, endEpoch = to,
             issuer = "Sereno", derived = true,
@@ -83,7 +86,7 @@ object SevereEngine {
             gust >= 70 -> AlertSeverity.Watch
             else -> AlertSeverity.Advisory
         }
-        val affected = hours.filter { (it.windGust ?: 0.0) >= 55 }
+        val affected = firstRun(hours) { (it.windGust ?: 0.0) >= 55 }.ifEmpty { listOf(peak) }
         return WeatherAlert(
             id = "derived-wind-${affected.first().epochSeconds}",
             kind = AlertKind.Wind,
@@ -138,7 +141,7 @@ object SevereEngine {
     private fun snow(hours: List<BlendedHour>, copy: Copy, offset: Int): WeatherAlert? {
         val total = hours.sumOf { it.snowfall ?: 0.0 }
         if (total < 2.0) return null
-        val snowy = hours.filter { (it.snowfall ?: 0.0) > 0.05 }
+        val snowy = firstRun(hours) { (it.snowfall ?: 0.0) > 0.05 }
         if (snowy.isEmpty()) return null
         val severity = when {
             total >= 25 -> AlertSeverity.Severe
@@ -163,7 +166,7 @@ object SevereEngine {
 
     private fun ice(hours: List<BlendedHour>, copy: Copy, offset: Int): WeatherAlert? {
         // Freezing rain is the dangerous case; plain sub-zero air is not news.
-        val freezing = hours.filter {
+        val freezing = firstRun(hours) {
             val code = it.weatherCode
             code == 56 || code == 57 || code == 66 || code == 67 ||
                 ((it.temperature ?: 99.0) <= 0.5 && (it.precipitation ?: 0.0) >= 0.2)
@@ -230,6 +233,46 @@ object SevereEngine {
         agreement >= 0.7 -> copy.t("I modelli concordano.", "The models agree.")
         agreement >= 0.5 -> copy.t("Accordo parziale tra i modelli.", "The models partly agree.")
         else -> copy.t("I modelli sono in disaccordo: segnale da monitorare.", "The models disagree: one to keep an eye on.")
+    }
+
+    /**
+     * The first contiguous run of hours matching [predicate].
+     *
+     * An alert describes one episode. Two separate storm afternoons are two
+     * events, and merging them into a single span misstates both.
+     */
+    private fun firstRun(
+        hours: List<BlendedHour>,
+        predicate: (BlendedHour) -> Boolean,
+    ): List<BlendedHour> {
+        val sorted = hours.sortedBy { it.epochSeconds }
+        val run = mutableListOf<BlendedHour>()
+        for (hour in sorted) {
+            if (predicate(hour)) {
+                // A gap of more than one hour ends the episode.
+                if (run.isNotEmpty() && hour.epochSeconds - run.last().epochSeconds > 3600) break
+                run += hour
+            } else if (run.isNotEmpty()) {
+                break
+            }
+        }
+        return run
+    }
+
+    /**
+     * Phrases a time span, avoiding the "from 11:00 to 11:00" trap when a span
+     * happens to be short, or a whole day long.
+     */
+    private fun window(from: Long, to: Long, offset: Int, copy: Copy): String {
+        val hours = ((to - from) / 3600).toInt()
+        return when {
+            hours <= 1 -> copy.t("verso le ${hh(from, offset)}", "around ${hh(from, offset)}")
+            hours >= 20 -> copy.t("per gran parte della giornata", "for much of the day")
+            else -> copy.t(
+                "dalle ${hh(from, offset)} alle ${hh(to, offset)}",
+                "from ${hh(from, offset)} to ${hh(to, offset)}",
+            )
+        }
     }
 
     private fun hh(epoch: Long, offset: Int): String {

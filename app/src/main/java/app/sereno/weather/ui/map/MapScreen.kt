@@ -34,6 +34,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
@@ -177,6 +178,11 @@ fun MapScreen(
                 }
             }
 
+            // A graticule. It is a genuine cartographic aid at low zoom, and it
+            // is also what stops the map from being a blank rectangle when the
+            // basemap provider is unreachable.
+            drawGraticule(camera, size.width, size.height, atmosphere.ink(0.07f))
+
             // The forecast field, projected onto the box it was sampled over.
             val current = field
             val bitmap = fieldBitmap
@@ -234,7 +240,14 @@ fun MapScreen(
                 Column(Modifier.weight(1f)) {
                     SText(copy.precipitationMap, style = Sereno.type.headline, maxLines = 1)
                     SText(
-                        text = radarNote(state.radar, copy, formatter),
+                        text = if (tileSource.health == BasemapHealth.Failing) {
+                            copy.t(
+                                "Mappa di base non disponibile · campo attivo",
+                                "Basemap unavailable · field still active",
+                            )
+                        } else {
+                            radarNote(state.radar, copy, formatter)
+                        },
                         style = Sereno.type.caption,
                         emphasis = Emphasis.tertiary,
                         maxLines = 1,
@@ -322,12 +335,53 @@ fun MapScreen(
 
             Spacer(Modifier.height(Space.md))
             SText(
-                text = "${TileSource.ATTRIBUTION} · ${copy.t("campo previsto da Open-Meteo", "forecast field by Open-Meteo")}",
+                text = "${tileSource.attribution} · ${copy.t("campo previsto da Open-Meteo", "forecast field by Open-Meteo")}",
                 style = Sereno.type.caption,
                 emphasis = Emphasis.quaternary,
                 maxLines = 1,
             )
         }
+    }
+}
+
+/**
+ * Latitude and longitude lines for the visible area.
+ *
+ * Spacing steps with zoom so the grid stays roughly the same density on screen
+ * — a fixed interval would be a single line at world view and a solid wash when
+ * zoomed into a town.
+ */
+private fun DrawScope.drawGraticule(
+    camera: MapCamera,
+    width: Float,
+    height: Float,
+    color: Color,
+) {
+    val bounds = camera.bounds(width, height)
+    val step = when {
+        camera.zoom <= 4 -> 10.0
+        camera.zoom <= 6 -> 5.0
+        camera.zoom <= 8 -> 2.0
+        camera.zoom <= 9.5 -> 1.0
+        else -> 0.5
+    }
+
+    var latitude = kotlin.math.floor(bounds.south / step) * step
+    while (latitude <= bounds.north) {
+        val y = camera.project(Coordinates(latitude, bounds.west), width, height).y
+        if (y in 0f..height) {
+            drawLine(color, Offset(0f, y), Offset(width, y), strokeWidth = 1f)
+        }
+        latitude += step
+    }
+
+    var longitude = kotlin.math.floor(bounds.west / step) * step
+    while (longitude <= bounds.east) {
+        val x = camera.project(Coordinates(bounds.south, longitude), width, height).x
+        if (x in 0f..width) {
+            drawLine(color, Offset(x, 0f), Offset(x, height), strokeWidth = 1f)
+        }
+        longitude += step
     }
 }
 

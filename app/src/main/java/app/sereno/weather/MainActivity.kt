@@ -10,6 +10,8 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
@@ -22,6 +24,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
@@ -29,7 +33,9 @@ import androidx.core.view.WindowCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.sereno.weather.core.Container
+import androidx.compose.runtime.CompositionLocalProvider
 import app.sereno.weather.design.AtmosphericBackdrop
+import app.sereno.weather.design.LocalChartAxes
 import app.sereno.weather.design.SerenoTheme
 import app.sereno.weather.design.Sereno
 import app.sereno.weather.design.Space
@@ -130,6 +136,8 @@ fun SerenoApp(container: Container) {
 
         BackHandler(enabled = navigator.overlays.isNotEmpty()) { navigator.pop() }
 
+        CompositionLocalProvider(LocalChartAxes provides state.settings.chartAxes) {
+
         val todayScroll = rememberScrollState()
         val daysScroll = rememberScrollState()
         val labScroll = rememberScrollState()
@@ -175,6 +183,25 @@ fun SerenoApp(container: Container) {
                         nowEpoch = nowEpoch,
                     )
                 }
+            }
+
+            // Content scrolls under the rail, so it is faded out before it gets
+            // there. Without this the rail has to fight whatever happens to be
+            // passing behind it. The map draws its own scrim and is excluded.
+            if (navigator.tab != Tab.Map) {
+                Box(
+                    Modifier
+                        .align(Alignment.BottomCenter)
+                        .fillMaxWidth()
+                        .height(132.dp)
+                        .background(
+                            Brush.verticalGradient(
+                                0f to Color.Transparent,
+                                0.55f to atmosphere.skyLow.copy(alpha = 0.72f),
+                                1f to atmosphere.skyLow.copy(alpha = 0.95f),
+                            ),
+                        ),
+                )
             }
 
             SerenoRail(
@@ -234,6 +261,7 @@ fun SerenoApp(container: Container) {
                             onReduceMotion = viewModel::setReduceMotion,
                             onRainNotifications = viewModel::setRainNotifications,
                             onSevereNotifications = viewModel::setSevereNotifications,
+                            onChartAxes = viewModel::setChartAxes,
                             onDeveloperMode = viewModel::setDeveloperMode,
                             onOpenDebug = { navigator.push(Overlay.Debug) },
                         )
@@ -251,6 +279,7 @@ fun SerenoApp(container: Container) {
                     }
                 }
             }
+        }
         }
     }
 }

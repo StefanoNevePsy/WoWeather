@@ -127,8 +127,13 @@ fun SerenoRail(
         modifier = modifier
             .wrapContentWidth()
             .clip(RoundedCornerShape(Radius.chip))
-            .background(atmosphere.ink(0.055f))
-            .border(Stroke.hairline, atmosphere.ink(Emphasis.hairline), RoundedCornerShape(Radius.chip))
+            // The rail floats over scrolling content, so it needs to be a plate
+            // rather than a tint: a translucent ink wash let text slide visibly
+            // underneath it. skyLow is the atmosphere's own low colour, so this
+            // stays part of the sky while being solid enough to read against.
+            .background(atmosphere.skyLow.copy(alpha = 0.95f))
+            .background(atmosphere.ink(0.05f))
+            .border(Stroke.rule, atmosphere.ink(0.20f), RoundedCornerShape(Radius.chip))
             .padding(4.dp),
     ) {
         Box(
@@ -146,7 +151,7 @@ fun SerenoRail(
                         .width(slotWidth)
                         .height(36.dp)
                         .clip(RoundedCornerShape(Radius.hair))
-                        .background(atmosphere.ink(0.10f)),
+                        .background(atmosphere.ink(0.13f)),
                 )
             }
 
@@ -166,7 +171,7 @@ fun SerenoRail(
                         SText(
                             text = label.uppercase(),
                             style = Sereno.type.label,
-                            emphasis = if (active) Emphasis.primary else Emphasis.tertiary,
+                            emphasis = if (active) Emphasis.primary else 0.55f,
                         )
                     }
                 }

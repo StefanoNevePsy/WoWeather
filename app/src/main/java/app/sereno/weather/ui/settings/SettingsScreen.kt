@@ -64,6 +64,7 @@ fun SettingsScreen(
     onReduceMotion: (Boolean?) -> Unit,
     onRainNotifications: (Boolean) -> Unit,
     onSevereNotifications: (Boolean) -> Unit,
+    onChartAxes: (Boolean) -> Unit,
     onDeveloperMode: (Boolean) -> Unit,
     onOpenDebug: () -> Unit,
     modifier: Modifier = Modifier,
@@ -184,6 +185,13 @@ fun SettingsScreen(
             ),
             checked = settings.reduceMotion == true,
             onCheckedChange = { onReduceMotion(if (it) true else null) },
+        )
+        SectionRule()
+        ToggleRow(
+            label = copy.chartAxes,
+            detail = copy.chartAxesDetail,
+            checked = settings.chartAxes,
+            onCheckedChange = onChartAxes,
         )
         SectionRule()
         ToggleRow(

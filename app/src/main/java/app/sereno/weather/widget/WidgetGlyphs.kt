@@ -1,51 +1,32 @@
 package app.sereno.weather.widget
 
+import android.content.Context
 import android.graphics.Bitmap
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Canvas
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.graphics.drawscope.CanvasDrawScope
-import androidx.compose.ui.unit.Density
-import androidx.compose.ui.unit.LayoutDirection
-import app.sereno.weather.design.drawWeatherGlyph
+import androidx.core.content.ContextCompat
+import androidx.core.graphics.drawable.DrawableCompat
+import androidx.core.graphics.drawable.toBitmap
+import app.sereno.weather.design.weatherIconRes
 
 /**
  * Renders Sereno's weather glyphs into bitmaps for the home-screen widget.
  *
- * `RemoteViews` cannot host Compose, so the obvious route would be a parallel
- * set of vector drawables — and a parallel set is a set that drifts. Driving
- * Compose's `CanvasDrawScope` onto a plain bitmap instead means the widget is
- * drawn by exactly the same code as the app, and an icon fixed in one place is
- * fixed in both.
+ * `RemoteViews` cannot host Compose, but it does not need to: the icons are
+ * vector drawables, so the widget tints and rasterises the very same asset the
+ * app renders. One icon set, one source of truth, no parallel copy to drift.
  */
 object WidgetGlyphs {
 
     fun render(
+        context: Context,
         code: Int?,
         isDay: Boolean,
         sizePx: Int,
-        ink: Color,
-        accent: Color,
-    ): Bitmap {
+        tintColor: Int,
+    ): Bitmap? {
         val side = sizePx.coerceAtLeast(1)
-        val bitmap = Bitmap.createBitmap(side, side, Bitmap.Config.ARGB_8888)
-        CanvasDrawScope().draw(
-            density = Density(1f),
-            layoutDirection = LayoutDirection.Ltr,
-            canvas = Canvas(bitmap.asImageBitmap()),
-            size = Size(side.toFloat(), side.toFloat()),
-        ) {
-            drawWeatherGlyph(
-                code = code,
-                isDay = isDay,
-                center = Offset(side / 2f, side / 2f),
-                sizePx = side.toFloat(),
-                ink = ink,
-                accent = accent,
-            )
-        }
-        return bitmap
+        val drawable = ContextCompat.getDrawable(context, weatherIconRes(code, isDay))
+            ?.mutate() ?: return null
+        DrawableCompat.setTint(drawable, tintColor)
+        return runCatching { drawable.toBitmap(side, side) }.getOrNull()
     }
 }

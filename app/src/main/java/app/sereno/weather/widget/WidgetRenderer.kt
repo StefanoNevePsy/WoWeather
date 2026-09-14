@@ -7,7 +7,6 @@ import android.content.Intent
 import android.content.res.Configuration
 import android.os.Bundle
 import android.widget.RemoteViews
-import androidx.compose.ui.graphics.Color
 import androidx.core.content.ContextCompat
 import app.sereno.weather.MainActivity
 import app.sereno.weather.R
@@ -59,8 +58,7 @@ object WidgetRenderer {
         }
 
         val views = RemoteViews(context.packageName, layout)
-        val ink = colorOf(context, R.color.widget_ink)
-        val accent = colorOf(context, R.color.widget_accent)
+        val ink = ContextCompat.getColor(context, R.color.widget_ink)
         val formatter = Formatter(settings, copy, bundle?.utcOffsetSeconds ?: 0)
 
         views.setOnClickPendingIntent(R.id.widget_root, openApp(context))
@@ -88,10 +86,8 @@ object WidgetRenderer {
             if (today == null) "" else
                 "${formatter.degrees(today.temperatureMax)}° / ${formatter.degrees(today.temperatureMin)}°",
         )
-        views.setImageViewBitmap(
-            R.id.widget_icon,
-            WidgetGlyphs.render(code, isDay, iconSize(layout), ink, accent),
-        )
+        WidgetGlyphs.render(context, code, isDay, iconSize(layout), ink)
+            ?.let { views.setImageViewBitmap(R.id.widget_icon, it) }
 
         if (layout == R.layout.widget_medium || layout == R.layout.widget_large) {
             views.removeAllViews(R.id.widget_hours)
@@ -102,10 +98,8 @@ object WidgetRenderer {
                     val item = RemoteViews(context.packageName, R.layout.widget_hour_item)
                     item.setTextViewText(R.id.hour_label, formatter.hourShort(point.epochSeconds))
                     item.setTextViewText(R.id.hour_temperature, formatter.temperature(point.temperature))
-                    item.setImageViewBitmap(
-                        R.id.hour_icon,
-                        WidgetGlyphs.render(point.weatherCode, point.isDay, 64, ink, accent),
-                    )
+                    WidgetGlyphs.render(context, point.weatherCode, point.isDay, 64, ink)
+                        ?.let { item.setImageViewBitmap(R.id.hour_icon, it) }
                     views.addView(R.id.widget_hours, item)
                 }
         }
@@ -117,10 +111,8 @@ object WidgetRenderer {
                 item.setTextViewText(R.id.day_label, formatter.dayLabel(day.epochSeconds, nowEpoch))
                 item.setTextViewText(R.id.day_min, "${formatter.degrees(day.temperatureMin)}°")
                 item.setTextViewText(R.id.day_max, "${formatter.degrees(day.temperatureMax)}°")
-                item.setImageViewBitmap(
-                    R.id.day_icon,
-                    WidgetGlyphs.render(day.weatherCode, true, 56, ink, accent),
-                )
+                WidgetGlyphs.render(context, day.weatherCode, true, 56, ink)
+                    ?.let { item.setImageViewBitmap(R.id.day_icon, it) }
                 views.addView(R.id.widget_days, item)
             }
         }
@@ -146,9 +138,6 @@ object WidgetRenderer {
         R.layout.widget_medium -> 100
         else -> 84
     }
-
-    private fun colorOf(context: Context, resId: Int): Color =
-        Color(ContextCompat.getColor(context, resId))
 
     private fun openApp(context: Context): PendingIntent {
         val intent = Intent(context, MainActivity::class.java).apply {

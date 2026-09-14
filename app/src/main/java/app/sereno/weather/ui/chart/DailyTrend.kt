@@ -23,6 +23,7 @@ import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import app.sereno.weather.design.Emphasis
+import app.sereno.weather.design.LocalChartAxes
 import app.sereno.weather.design.Sereno
 import app.sereno.weather.domain.model.BlendedDay
 import app.sereno.weather.ui.Formatter
@@ -51,6 +52,7 @@ fun DailyTrendChart(
     val type = Sereno.type
     val measurer = rememberTextMeasurer()
     val inspecting = LocalInspectionMode.current
+    val showAxis = LocalChartAxes.current
 
     if (days.size < 2) return
 
@@ -89,6 +91,17 @@ fun DailyTrendChart(
             }
         }
         if (maxPoints.size < 2 || minPoints.size < 2) return@Canvas
+
+        if (showAxis) {
+            drawValueAxis(
+                ticks = axisTicks(range.start, range.endInclusive, top, bottom, labelMiddle = false) {
+                    formatter.temperature(it)
+                },
+                measurer = measurer,
+                labelStyle = type.tick.copy(color = atmosphere.ink(Emphasis.quaternary)),
+                gridColor = atmosphere.ink(0.05f),
+            )
+        }
 
         // The diurnal band, drawn per day so each segment can carry its own
         // confidence as opacity.

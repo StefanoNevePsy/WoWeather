@@ -2,7 +2,10 @@ package app.sereno.weather.ui.map
 
 import android.graphics.BitmapFactory
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
@@ -148,24 +151,69 @@ data class GeoBounds(
 data class TileKey(val zoom: Int, val x: Int, val y: Int)
 
 /**
+ * Where basemap tiles come from.
+ *
+ * Kept as an explicit, swappable thing after a hard lesson: the first release
+ * used CARTO's public basemap endpoint, which started stamping "API KEY
+ * REQUIRED" across every tile. Against a dark basemap that turned the whole map
+ * black with a watermark over it. A tile provider is somebody else's service
+ * and can change its terms overnight, so changing provider must be a one-line
+ * edit and running without one must remain survivable.
+ */
+enum class BasemapStyle(val attribution: String) {
+    /**
+     * Esri's Gray Canvas, which is purpose-built as a backdrop for data. It is
+     * label-light and almost colourless, which is exactly what a precipitation
+     * field needs behind it — a full-colour street map would fight it.
+     */
+    EsriGrayCanvas("© Esri · OpenStreetMap contributors");
+
+    fun url(key: TileKey, dark: Boolean): String = when (this) {
+        EsriGrayCanvas -> {
+            val layer = if (dark) "World_Dark_Gray_Base" else "World_Light_Gray_Base"
+            // Note the y/x order: ArcGIS REST puts row before column, unlike the
+            // usual {z}/{x}/{y} slippy-map convention.
+            "https://services.arcgisonline.com/ArcGIS/rest/services/Canvas/" +
+                "$layer/MapServer/tile/${key.zoom}/${key.y}/${key.x}"
+        }
+    }
+}
+
+/** How the basemap is doing, so the UI can say something true about it. */
+enum class BasemapHealth { Idle, Loading, Ok, Failing }
+
+/**
  * Raster basemap tiles.
  *
- * A deliberately plain, label-free basemap: the map exists to show where the
- * weather is, and a basemap with road names and place labels competes with the
- * precipitation field for exactly the attention the field needs.
- *
- * Tiles are kept in memory and served by the shared OkHttp disk cache
- * underneath, and in-flight loads are capped so a fast pan cannot open fifty
- * sockets at once.
+ * Tiles are kept in memory and backed by the shared OkHttp disk cache, and
+ * in-flight loads are capped so that a fast pan cannot open fifty sockets at
+ * once. Failures are counted rather than swallowed: the map reports when the
+ * basemap is unavailable instead of silently showing an empty rectangle.
  */
 class TileSource(
     private val http: Http,
     private val scope: CoroutineScope,
+    private val style: BasemapStyle = BasemapStyle.EsriGrayCanvas,
 ) {
     private val tiles = mutableStateMapOf<TileKey, ImageBitmap>()
     private val inFlight = mutableSetOf<TileKey>()
     private val failed = mutableSetOf<TileKey>()
     private val gate = Semaphore(6)
+
+    var loaded by mutableIntStateOf(0)
+        private set
+    var failures by mutableIntStateOf(0)
+        private set
+
+    val attribution: String get() = style.attribution
+
+    val health: BasemapHealth
+        get() = when {
+            loaded > 0 -> BasemapHealth.Ok
+            failures >= 3 -> BasemapHealth.Failing
+            inFlight.isNotEmpty() -> BasemapHealth.Loading
+            else -> BasemapHealth.Idle
+        }
 
     fun tile(key: TileKey, dark: Boolean): ImageBitmap? {
         tiles[key]?.let { return it }
@@ -175,16 +223,20 @@ class TileSource(
         scope.launch {
             val bitmap = gate.withPermit { load(key, dark) }
             inFlight -= key
-            if (bitmap != null) tiles[key] = bitmap else failed += key
+            if (bitmap != null) {
+                tiles[key] = bitmap
+                loaded += 1
+            } else {
+                failed += key
+                failures += 1
+            }
         }
         return null
     }
 
     private suspend fun load(key: TileKey, dark: Boolean): ImageBitmap? = withContext(Dispatchers.IO) {
-        val style = if (dark) "dark_nolabels" else "light_nolabels"
-        val url = "https://basemaps.cartocdn.com/$style/${key.zoom}/${key.x}/${key.y}.png"
         runCatching {
-            val bytes = http.getBytes(url)
+            val bytes = http.getBytes(style.url(key, dark))
             if (bytes.isEmpty()) return@runCatching null
             BitmapFactory.decodeByteArray(bytes, 0, bytes.size)?.asImageBitmap()
         }.getOrNull()
@@ -193,13 +245,10 @@ class TileSource(
     /** Clears the failure memo so a pan back over a tile retries it. */
     fun retryFailures() {
         failed.clear()
+        failures = 0
     }
 
     fun memoryTileCount(): Int = tiles.size
-
-    companion object {
-        const val ATTRIBUTION = "© OpenStreetMap · © CARTO"
-    }
 }
 
 /** Which tiles cover the viewport at this camera. */

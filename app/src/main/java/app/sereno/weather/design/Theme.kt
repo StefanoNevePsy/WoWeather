@@ -38,6 +38,15 @@ val LocalTextStyle: ProvidableCompositionLocal<TextStyle> =
     staticCompositionLocalOf { SerenoTypography().body }
 
 /**
+ * Whether charts draw their value axis.
+ *
+ * A composition local rather than a parameter: charts are nested several levels
+ * deep inside screens that have no other reason to know about this preference,
+ * and threading it through every one of them would be noise.
+ */
+val LocalChartAxes: ProvidableCompositionLocal<Boolean> = staticCompositionLocalOf { true }
+
+/**
  * The design system entry point. Deliberately not `MaterialTheme`: nothing in
  * the app reads a Material colour scheme, shape scheme or typography.
  */

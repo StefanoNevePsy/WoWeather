@@ -24,7 +24,9 @@ import androidx.compose.ui.graphics.PathMeasure
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.text.TextMeasurer
@@ -33,8 +35,9 @@ import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import app.sereno.weather.design.Emphasis
+import app.sereno.weather.design.LocalChartAxes
 import app.sereno.weather.design.Sereno
-import app.sereno.weather.design.drawWeatherGlyph
+import app.sereno.weather.design.rememberWeatherPainter
 import app.sereno.weather.domain.model.BlendedHour
 import app.sereno.weather.ui.Formatter
 import kotlin.math.roundToInt
@@ -74,6 +77,7 @@ fun HourlyRibbon(
     val type = Sereno.type
     val measurer = rememberTextMeasurer()
     val inspecting = LocalInspectionMode.current
+    val showAxis = LocalChartAxes.current
 
     val window = remember(hours, nowEpoch) {
         hours.filter { it.epochSeconds >= nowEpoch - 3600 }.take(24)
@@ -105,8 +109,17 @@ fun HourlyRibbon(
     val range = remember(window) { Curves.niceRange(temperatures, step = 2.0, padding = 1.2) }
     val maxPrecip = remember(window) {
         // Always allow at least 2 mm of scale so a drizzle does not render as a
-        // downpour just because it is the wettest hour on screen.
-        maxOf(2.0, window.maxOf { it.precipitation ?: 0.0 })
+        // downpour just because it is the wettest hour on screen, and round up
+        // so the axis reads 3 mm rather than 2.9.
+        Curves.niceCeiling(maxOf(2.0, window.maxOf { it.precipitation ?: 0.0 }))
+    }
+
+    // Condition marks sit every six hours. The slots are fixed rather than
+    // derived so the number of painters resolved during composition is stable.
+    val markSlots = remember { listOf(2, 8, 14, 20) }
+    val markPainters = markSlots.map { slot ->
+        val point = window.getOrNull(slot)
+        rememberWeatherPainter(point?.weatherCode, point?.isDay ?: true)
     }
 
     // A dry day has nothing to put in the precipitation band, and an empty
@@ -191,6 +204,35 @@ fun HourlyRibbon(
             strokeWidth = 1f,
         )
 
+        // 4b. The value axis, under the data so the curve always wins.
+        val axisLabelStyle = type.tick.copy(color = atmosphere.ink(Emphasis.quaternary))
+        if (showAxis) {
+            drawValueAxis(
+                ticks = axisTicks(range.start, range.endInclusive, tempTop, tempBottom) {
+                    formatter.temperature(it)
+                },
+                measurer = measurer,
+                labelStyle = axisLabelStyle,
+                gridColor = atmosphere.ink(0.05f),
+            )
+            if (!dry) {
+                // One reference level for the precipitation band: its ceiling.
+                // Three would crowd a 44dp strip, and the ceiling is the number
+                // that tells you how to read the bars.
+                drawValueAxis(
+                    ticks = listOf(
+                        AxisTick(precipTop, formatter.precipitation(maxPrecip)),
+                    ),
+                    measurer = measurer,
+                    labelStyle = axisLabelStyle,
+                    gridColor = atmosphere.ink(0.05f),
+                    // Inside the band, so it cannot crowd the lowest
+                    // temperature label sitting just above it.
+                    labelBelow = true,
+                )
+            }
+        }
+
         // 5. Temperature.
         val tempPoints = window.mapIndexedNotNull { index, hour ->
             hour.temperature?.let {
@@ -223,16 +265,22 @@ fun HourlyRibbon(
 
         // 6. Condition marks every six hours: enough to orient, never a row of
         //    icons competing with the curve.
-        window.forEachIndexed { index, hour ->
-            if (index % 6 != 2) return@forEachIndexed
-            drawWeatherGlyph(
-                code = hour.weatherCode,
-                isDay = hour.isDay,
-                center = Offset(centreX(index), GLYPH_Y.dp.toPx()),
-                sizePx = 17.dp.toPx(),
-                ink = atmosphere.ink(Emphasis.secondary * progress),
-                accent = atmosphere.accent.copy(alpha = progress),
-            )
+        val glyphPx = 17.dp.toPx()
+        markSlots.forEachIndexed { slotIndex, slot ->
+            if (slot >= window.size) return@forEachIndexed
+            val painter = markPainters[slotIndex]
+            translate(
+                left = centreX(slot) - glyphPx / 2f,
+                top = GLYPH_Y.dp.toPx() - glyphPx / 2f,
+            ) {
+                with(painter) {
+                    draw(
+                        size = androidx.compose.ui.geometry.Size(glyphPx, glyphPx),
+                        alpha = progress,
+                        colorFilter = ColorFilter.tint(atmosphere.ink(Emphasis.secondary)),
+                    )
+                }
+            }
         }
 
         // 7. Sunrise and sunset as ticks on the axis.

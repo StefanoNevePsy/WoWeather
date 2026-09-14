@@ -59,6 +59,7 @@ publishing anywhere.**
 | **ECMWF** | IFS and AIFS, 25 km, to +15 days |
 | **NOAA** | GFS, kept at low weight as the model to disagree with |
 | **Protezione Civile** | National radar mosaic status (see limitations) |
+| **Esri Gray Canvas** | Map basemap tiles, no API key |
 
 All seven models arrive in a single Open-Meteo request, which is what makes the
 whole premise affordable on mobile data.
@@ -104,7 +105,8 @@ has to be reproducible, auditable and correct in two languages.
 - Nowcasting — "rain in 35–50 min", always a range, never a fake single minute
 - **Forecast Lab**: every model as its own line over a shared spread envelope,
   a per-hour readout, and the actual weighting curve in force
-- Precipitation / cloud / gust map with a 24-hour timeline
+- Precipitation / cloud / gust map with a 24-hour timeline, over a label-light
+  grey basemap with a latitude/longitude graticule
 - 14-day trend chart that fades with confidence
 - Derived severe-weather warnings (storms, hail, wind, rain, snow, ice, heat,
   cold), clearly labelled as derived rather than official
@@ -131,9 +133,14 @@ scheme, typography or shapes anywhere in it.
   cut for the hero temperature, a text cut for everything else), tabular figures
   everywhere numbers line up, and Instrument Serif italic in exactly one place:
   the narrative line.
-- **Icons are drawn, not imported** — a 24-unit grid, single stroke weight, fill
-  reserved for the sun's disc and a lightning bolt. The widget renders them
-  through the same code.
+- **One icon family, everywhere.** Lucide (ISC) — a 24-unit grid at a single
+  stroke weight, covering both the weather set and the interface set, so a
+  chevron beside a rain glyph genuinely is from the same family. Each asset is
+  tinted at the call site, and the widget rasterises the very same drawable the
+  app renders.
+- **Charts carry their scale.** Value gridlines are labelled inside the plot
+  rather than in a gutter, which on a 370dp-wide phone chart is worth more than
+  a tidy column of right-aligned numbers. Turn them off in Settings.
 
 Accessibility: content descriptions throughout, 48dp touch targets, honoured
 reduce-motion (and battery saver), and charts that distinguish series by dash
@@ -204,6 +211,12 @@ six real defects on its first run.
   and marked as such. `AlertProvider` exists for a real feed.
 - **ICON-2I and AROME HD are regional.** Outside their domains they contribute
   nothing, and confidence correctly falls because fewer models answered.
+- **The basemap is somebody else's service.** The first release used CARTO's
+  public endpoint, which began stamping "API KEY REQUIRED" across every tile;
+  against the dark basemap that rendered the map black. It now uses Esri's Gray
+  Canvas, the tile source is a one-line swap, and the map states plainly when
+  the basemap is unavailable while still drawing the graticule, the marker and
+  the forecast field.
 - **R8 is off** for this build, so the shipped APK is byte-for-byte what was
   tested. The rules in `proguard-rules.pro` are ready for turning it on.
 - **Air quality has no pollen data** and the map layers are limited to
@@ -227,7 +240,7 @@ six real defects on its first run.
 ## Licence and attribution
 
 Weather data by [Open-Meteo](https://open-meteo.com) (CC BY 4.0), from ECMWF,
-DWD, NOAA, Météo-France and ItaliaMeteo/ARPAE. Basemap tiles
-© OpenStreetMap contributors, © CARTO. Radar mosaic © Dipartimento della
-Protezione Civile. Inter by Rasmus Andersson and Instrument Serif by Instrument,
-both under the SIL Open Font License.
+DWD, NOAA, Météo-France and ItaliaMeteo/ARPAE. Basemap © Esri, © OpenStreetMap
+contributors. Radar mosaic © Dipartimento della Protezione Civile. Icons by
+[Lucide](https://lucide.dev) (ISC). Inter by Rasmus Andersson and Instrument
+Serif by Instrument, both under the SIL Open Font License.

@@ -295,6 +295,7 @@ class SerenoViewModel(private val container: Container, deviceLanguage: Lang) : 
     fun setReduceMotion(value: Boolean?) = viewModelScope.launch { container.settings.setReduceMotion(value) }
     fun setRainNotifications(value: Boolean) = viewModelScope.launch { container.settings.setRainNotifications(value) }
     fun setSevereNotifications(value: Boolean) = viewModelScope.launch { container.settings.setSevereNotifications(value) }
+    fun setChartAxes(value: Boolean) = viewModelScope.launch { container.settings.setChartAxes(value) }
     fun setDeveloperMode(value: Boolean) = viewModelScope.launch { container.settings.setDeveloperMode(value) }
     fun setMockState(key: String?) = viewModelScope.launch { container.settings.setMockState(key) }
 

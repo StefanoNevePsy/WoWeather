@@ -67,8 +67,10 @@ fun <T> SegmentedControl(
         modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(Radius.chip))
-            .background(atmosphere.ink(0.045f))
-            .border(Stroke.hairline, atmosphere.ink(Emphasis.hairline), RoundedCornerShape(Radius.chip))
+            // Same reasoning as the rail: readable against whatever is behind it.
+            .background(atmosphere.skyLow.copy(alpha = 0.55f))
+            .background(atmosphere.ink(0.05f))
+            .border(Stroke.hairline, atmosphere.ink(0.18f), RoundedCornerShape(Radius.chip))
             .padding(3.dp),
     ) {
         Box(
@@ -86,7 +88,7 @@ fun <T> SegmentedControl(
                         .width(slot)
                         .height(height)
                         .clip(RoundedCornerShape(Radius.hair))
-                        .background(atmosphere.ink(0.10f)),
+                        .background(atmosphere.ink(0.14f)),
                 )
             }
             Row(Modifier.fillMaxWidth()) {
@@ -105,7 +107,7 @@ fun <T> SegmentedControl(
                         SText(
                             text = text,
                             style = Sereno.type.dataSmall,
-                            emphasis = if (active) Emphasis.primary else Emphasis.tertiary,
+                            emphasis = if (active) Emphasis.primary else 0.55f,
                             maxLines = 1,
                         )
                     }

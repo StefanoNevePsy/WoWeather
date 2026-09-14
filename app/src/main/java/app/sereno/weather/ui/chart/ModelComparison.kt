@@ -25,6 +25,7 @@ import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import app.sereno.weather.design.Emphasis
+import app.sereno.weather.design.LocalChartAxes
 import app.sereno.weather.design.Sereno
 import app.sereno.weather.domain.model.HourPoint
 import app.sereno.weather.domain.model.WeatherModel
@@ -105,6 +106,7 @@ fun ModelComparisonChart(
     val type = Sereno.type
     val measurer = rememberTextMeasurer()
     val inspecting = LocalInspectionMode.current
+    val showAxis = LocalChartAxes.current
 
     val timeline = remember(seriesByModel, nowEpoch, hoursShown) {
         (0 until hoursShown).map { nowEpoch + it * 3600L }
@@ -164,16 +166,25 @@ fun ModelComparisonChart(
         fun centreX(index: Int) = step * (index + 0.5f)
         fun y(value: Double) = Curves.project(value, range.start, range.endInclusive, top, bottom)
 
-        // Gridlines: three, quiet, unlabelled except at the extremes.
-        listOf(0f, 0.5f, 1f).forEach { fraction ->
-            val lineY = bottom - (bottom - top) * fraction
-            drawLine(
-                color = atmosphere.ink(Emphasis.whisper + 0.02f),
-                start = Offset(0f, lineY),
-                end = Offset(size.width, lineY),
-                strokeWidth = 1f,
-            )
-        }
+        // Gridlines, labelled in the metric's own units so the reader never has
+        // to guess whether a line means millimetres or per cent.
+        drawValueAxis(
+            ticks = if (showAxis) {
+                axisTicks(range.start, range.endInclusive, top, bottom, labelMiddle = false) { value ->
+                    when (metric) {
+                        LabMetric.Temperature -> formatter.temperature(value)
+                        LabMetric.Precipitation -> formatter.precipitation(value)
+                        LabMetric.Wind -> formatter.speed(value)
+                        LabMetric.Cloud -> formatter.percent(value)
+                    }
+                }
+            } else {
+                listOf(0f, 0.5f, 1f).map { AxisTick(bottom - (bottom - top) * it, "") }
+            },
+            measurer = measurer,
+            labelStyle = type.tick.copy(color = atmosphere.ink(Emphasis.quaternary)),
+            gridColor = atmosphere.ink(Emphasis.whisper + 0.02f),
+        )
 
         // The envelope.
         val upper = mutableListOf<Offset>()

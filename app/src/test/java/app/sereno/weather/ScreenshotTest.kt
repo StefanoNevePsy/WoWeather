@@ -204,7 +204,8 @@ class ScreenshotTest {
                         onClose = {}, onTheme = {}, onTemperatureUnit = {}, onSpeedUnit = {},
                         onPrecipUnit = {}, onPressureUnit = {}, onLanguage = {},
                         onReduceMotion = {}, onRainNotifications = {},
-                        onSevereNotifications = {}, onDeveloperMode = {}, onOpenDebug = {},
+                        onSevereNotifications = {}, onChartAxes = {},
+                        onDeveloperMode = {}, onOpenDebug = {},
                     )
                 },
                 // The map and the debug screen round out the set: neither is

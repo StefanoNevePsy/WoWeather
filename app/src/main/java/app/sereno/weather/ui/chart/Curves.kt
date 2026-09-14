@@ -95,6 +95,19 @@ object Curves {
     }
 
     /**
+     * The smallest sensible round number at or above [value].
+     *
+     * Bars scaled to a raw maximum give an axis reading "2.9 mm", which is both
+     * ugly and useless — nobody reads a chart against 2.9. Rounding up to a step
+     * people actually think in also keeps the bar heights stable as the data
+     * wobbles from one refresh to the next.
+     */
+    fun niceCeiling(value: Double): Double {
+        val steps = listOf(1.0, 2.0, 3.0, 5.0, 8.0, 10.0, 15.0, 20.0, 30.0, 50.0, 75.0, 100.0)
+        return steps.firstOrNull { it >= value } ?: (kotlin.math.ceil(value / 50.0) * 50.0)
+    }
+
+    /**
      * Picks a rounded axis range that contains the data.
      *
      * Charts that snap their axis to the exact data minimum make every day look
