@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -17,12 +18,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import app.sereno.weather.design.Emphasis
 import app.sereno.weather.design.GapBlock
 import app.sereno.weather.design.GapRow
@@ -85,6 +81,7 @@ fun TodayScreen(
     Column(
         modifier = modifier
             .fillMaxWidth()
+            .statusBarsPadding()
             .verticalScroll(scrollState)
             .padding(horizontal = Space.pageMargin),
     ) {
@@ -189,13 +186,12 @@ private fun HeroBlock(
 
     Row(verticalAlignment = Alignment.Top, modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.weight(1f)) {
+            // The degree sign is set at full size in the display cut rather than
+            // as a superscript. Inter's ring already sits at cap height, so
+            // shrinking and shifting it only ever lands it slightly wrong; at
+            // full size it is simply correct.
             SText(
-                text = buildAnnotatedString {
-                    append(formatter.degrees(temperature))
-                    withStyle(SpanStyle(fontSize = 42.sp, fontWeight = FontWeight.Light)) {
-                        append("°")
-                    }
-                },
+                text = formatter.temperature(temperature),
                 style = type.display,
                 maxLines = 1,
             )

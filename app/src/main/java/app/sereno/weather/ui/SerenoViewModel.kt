@@ -41,6 +41,8 @@ data class AppState(
     val searchQuery: String = "",
     val searchResults: List<Place> = emptyList(),
     val searching: Boolean = false,
+    /** Cached forecasts for the saved places, so the Places list shows real temperatures. */
+    val placeSummaries: Map<String, ForecastBundle> = emptyMap(),
 ) {
     /** Every place the switcher offers: the GPS entry first, then saved ones. */
     val allPlaces: List<Place>
@@ -115,6 +117,7 @@ class SerenoViewModel(private val container: Container, deviceLanguage: Lang) : 
         viewModelScope.launch {
             container.places.places.collect { places ->
                 _state.update { it.copy(places = places) }
+                refreshPlaceSummaries()
                 if (_state.value.selectedPlace == null) loadForecast()
             }
         }
@@ -127,6 +130,21 @@ class SerenoViewModel(private val container: Container, deviceLanguage: Lang) : 
             }
         }
         resolveLocation()
+        refreshPlaceSummaries()
+    }
+
+    /**
+     * Reads each saved place's cached forecast so the Places list can show a
+     * temperature next to every row. Cache only, never the network: opening a
+     * list of ten cities must not fire ten forecast requests.
+     */
+    private fun refreshPlaceSummaries() {
+        viewModelScope.launch {
+            val summaries = _state.value.allPlaces.mapNotNull { place ->
+                container.repository.cachedOnly(place)?.let { place.id to it }
+            }.toMap()
+            _state.update { it.copy(placeSummaries = it.placeSummaries + summaries) }
+        }
     }
 
     // -----------------------------------------------------------------------
@@ -194,7 +212,12 @@ class SerenoViewModel(private val container: Container, deviceLanguage: Lang) : 
         forecastJob?.cancel()
         forecastJob = viewModelScope.launch {
             container.repository.stream(place, current.copy, forceRefresh = force).collect { resource ->
-                _state.update { it.copy(forecast = resource) }
+                _state.update { state ->
+                    val summaries = (resource as? ForecastResource.Data)
+                        ?.let { state.placeSummaries + (place.id to it.bundle) }
+                        ?: state.placeSummaries
+                    state.copy(forecast = resource, placeSummaries = summaries)
+                }
             }
         }
         viewModelScope.launch {

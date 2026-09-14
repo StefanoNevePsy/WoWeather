@@ -140,20 +140,29 @@ object MockWeather {
             State.Storm -> 26.0 + diurnal * 4
             State.Snow -> -1.0 + diurnal * 2
         }
+        // Two slow waves standing in for synoptic evolution. Without them every
+        // day of the mock is identical, the fortnight trend chart is a flat
+        // rectangle, and the daily list cannot be judged at all.
+        val synoptic = sin(index / 47.0) * 3.6 + sin(index / 113.0) * 2.4
         val jitter = (random.nextDouble() - 0.5) * 0.8
-        val temperature = base + bias + jitter
+        val temperature = base + bias + jitter + synoptic
 
+        // Precipitation waxes and wanes over days too, so consecutive days in
+        // the mock are not carbon copies.
+        val wetSpell = (0.35 + 0.9 * ((sin(index / 61.0) + 1.0) / 2.0))
         val precipitation = when (state) {
-            State.Rain -> max(0.0, 1.4 + sin(index / 3.0) * 1.6 + bias * 0.8)
-            State.Storm -> if (index % 12 in 5..8) max(0.0, 7.0 + sin(index.toDouble()) * 5 + bias * 3) else 0.0
-            State.Snow -> max(0.0, 0.9 + sin(index / 4.0) * 0.7)
+            State.Rain -> max(0.0, (1.4 + sin(index / 3.0) * 1.6 + bias * 0.8) * wetSpell)
+            // Storms in the opening hours, so the hero and the alerts agree
+            // with each other when this state is selected.
+            State.Storm -> if (index % 11 <= 3) max(0.0, 7.0 + sin(index.toDouble()) * 5 + bias * 3) else 0.0
+            State.Snow -> max(0.0, (0.9 + sin(index / 4.0) * 0.7) * wetSpell)
             State.Overcast -> if (index % 9 == 0) 0.12 else 0.0
             else -> 0.0
         }
 
         val cloud = when (state) {
             State.ClearDay, State.ClearNight -> 4.0 + random.nextDouble() * 9
-            State.PartlyCloudy -> 38.0 + sin(index / 5.0) * 22
+            State.PartlyCloudy -> 42.0 + sin(index / 5.0) * 18 + sin(index / 53.0) * 26
             State.Overcast -> 94.0
             State.Fog -> 99.0
             State.Rain -> 90.0

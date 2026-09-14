@@ -81,8 +81,11 @@ data class DataColors(
 ) {
     /** Maps a temperature in °C onto the warm/cold ramp used by every chart. */
     fun forTemperature(celsius: Double): Color {
+        // Anchored so that "mild" lands where most people stop needing a coat.
+        // The earlier ramp put 14 C well into orange, which read as warm on a
+        // day that is not.
         val stops = listOf(
-            -20.0 to cold, 0.0 to cool, 10.0 to mild, 20.0 to warm, 32.0 to hot,
+            -20.0 to cold, 2.0 to cool, 14.0 to mild, 24.0 to warm, 34.0 to hot,
         )
         if (celsius <= stops.first().first) return stops.first().second
         if (celsius >= stops.last().first) return stops.last().second
@@ -111,7 +114,7 @@ fun lerpColor(a: Color, b: Color, f: Float): Color {
 val LightData = DataColors(
     warm = Color(0xFFE08A3C),
     hot = Color(0xFFD4552F),
-    mild = Color(0xFFC9A227),
+    mild = Color(0xFF4E9E86),
     cool = Color(0xFF3F87C4),
     cold = Color(0xFF5C6FC9),
     precip = Color(0xFF2E7BB8),
@@ -130,7 +133,7 @@ val LightData = DataColors(
 val DarkData = DataColors(
     warm = Color(0xFFF2A45C),
     hot = Color(0xFFEE7350),
-    mild = Color(0xFFE2C158),
+    mild = Color(0xFF5FC2A6),
     cool = Color(0xFF6FB4E8),
     cold = Color(0xFF8E9CEA),
     precip = Color(0xFF6BB6EC),

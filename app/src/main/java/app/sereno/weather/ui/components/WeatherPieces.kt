@@ -208,7 +208,7 @@ fun DailyRow(
                 .semantics { contentDescription = description },
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Column(Modifier.width(74.dp)) {
+            Column(Modifier.width(94.dp)) {
                 SText(label, style = type.body, maxLines = 1)
                 if (probability != null && probability >= 15) {
                     Spacer(Modifier.height(1.dp))

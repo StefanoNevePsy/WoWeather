@@ -4,6 +4,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -24,12 +25,7 @@ import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.semantics.clearAndSetSemantics
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import app.sereno.weather.design.Emphasis
 import app.sereno.weather.design.GapRow
 import app.sereno.weather.design.GapSection
@@ -81,6 +77,7 @@ fun DayDetailScreen(
     Column(
         modifier = modifier
             .fillMaxWidth()
+            .statusBarsPadding()
             .verticalScroll(scrollState)
             .padding(horizontal = Space.pageMargin),
     ) {
@@ -119,10 +116,7 @@ fun DayDetailScreen(
         Row(verticalAlignment = Alignment.Top, modifier = Modifier.fillMaxWidth()) {
             Column(Modifier.weight(1f)) {
                 SText(
-                    text = buildAnnotatedString {
-                        append(formatter.degrees(day.temperatureMax))
-                        withStyle(SpanStyle(fontSize = 22.sp, fontWeight = FontWeight.Light)) { append("°") }
-                    },
+                    text = formatter.temperature(day.temperatureMax),
                     style = Sereno.type.displaySmall,
                     maxLines = 1,
                 )

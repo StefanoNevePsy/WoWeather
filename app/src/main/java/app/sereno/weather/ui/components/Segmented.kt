@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -109,5 +111,86 @@ fun <T> SegmentedControl(
                 }
             }
         }
+    }
+}
+
+/**
+ * A boolean control.
+ *
+ * A bordered square that gains a check, rather than a sliding track. The track
+ * switch is so strongly associated with Material and iOS that using one would
+ * import another platform's voice into a design that has its own; a check in a
+ * square reads as unambiguously on or off and belongs to the same drawn-stroke
+ * family as the rest of the iconography.
+ */
+@Composable
+fun SCheck(
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    contentDescription: String? = null,
+) {
+    val atmosphere = Sereno.atmosphere
+    val motion = Sereno.motion
+    val fill by animateFloatAsState(
+        targetValue = if (checked) 1f else 0f,
+        animationSpec = motion.fade(180),
+        label = "checkFill",
+    )
+
+    Pressable(
+        onClick = { onCheckedChange(!checked) },
+        enabled = enabled,
+        modifier = modifier.size(app.sereno.weather.design.Touch.compact),
+        contentAlignment = Alignment.Center,
+        onClickLabel = contentDescription,
+    ) {
+        Box(
+            Modifier
+                .size(21.dp)
+                .clip(RoundedCornerShape(Radius.hair))
+                .background(atmosphere.ink(0.05f + 0.10f * fill))
+                .border(
+                    Stroke.rule,
+                    atmosphere.ink(Emphasis.hairline + 0.14f * fill),
+                    RoundedCornerShape(Radius.hair),
+                ),
+            contentAlignment = Alignment.Center,
+        ) {
+            if (fill > 0.01f) {
+                app.sereno.weather.design.SGlyph(
+                    glyph = app.sereno.weather.design.Glyph.Check,
+                    size = 14.dp,
+                    emphasis = fill,
+                )
+            }
+        }
+    }
+}
+
+/** A settings row carrying a boolean. */
+@Composable
+fun ToggleRow(
+    label: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+    detail: String? = null,
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .heightIn(min = app.sereno.weather.design.Touch.min)
+            .semantics { contentDescription = label },
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        androidx.compose.foundation.layout.Column(Modifier.weight(1f)) {
+            SText(label, style = Sereno.type.body)
+            if (detail != null) {
+                SText(detail, style = Sereno.type.caption, emphasis = Emphasis.tertiary)
+            }
+        }
+        SCheck(checked, onCheckedChange, contentDescription = label)
     }
 }

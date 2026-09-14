@@ -84,6 +84,16 @@ android {
         }
     }
 
+    testOptions {
+        unitTests {
+            // Robolectric renders the real Compose UI to a bitmap on the JVM,
+            // which is the only way to actually look at these screens without a
+            // device; that needs merged Android resources on the test classpath.
+            isIncludeAndroidResources = true
+            isReturnDefaultValues = true
+        }
+    }
+
     lint {
         warningsAsErrors = false
         abortOnError = true
@@ -91,7 +101,36 @@ android {
     }
 }
 
+/**
+ * Robolectric normally downloads its Android runtime jar itself, at test time,
+ * over its own HTTP client. Letting Gradle resolve it instead means it comes
+ * through the same repositories (and the same proxy configuration) as every
+ * other dependency, and that tests can then run fully offline.
+ */
+val robolectricRuntime: Configuration by configurations.creating
+
+val prepareRobolectricJars by tasks.registering(Copy::class) {
+    from(robolectricRuntime)
+    into(layout.buildDirectory.dir("robolectric-jars"))
+}
+
+tasks.withType<Test>().configureEach {
+    dependsOn(prepareRobolectricJars)
+    systemProperty("robolectric.offline", "true")
+    systemProperty(
+        "robolectric.dependency.dir",
+        layout.buildDirectory.dir("robolectric-jars").get().asFile.absolutePath,
+    )
+    // Screenshot rendering needs real Skia rather than Robolectric's no-op canvas.
+    systemProperty("robolectric.graphicsMode", "NATIVE")
+    maxHeapSize = "2g"
+}
+
 dependencies {
+    // Both SDK levels Robolectric may pick for this project.
+    robolectricRuntime("org.robolectric:android-all-instrumented:14-robolectric-10818077-i7")
+    robolectricRuntime("org.robolectric:android-all-instrumented:15-robolectric-12650502-i7")
+
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.lifecycle.runtime.ktx)
@@ -115,4 +154,9 @@ dependencies {
 
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.test.core)
+    testImplementation(platform(libs.compose.bom))
+    testImplementation(libs.compose.ui.test.junit4)
+    testImplementation(libs.compose.ui.test.manifest)
 }

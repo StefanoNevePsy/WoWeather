@@ -27,15 +27,24 @@ object Curves {
      */
     fun smooth(points: List<Offset>, tension: Float = 0.12f): Path {
         val path = Path()
-        if (points.isEmpty()) return path
-        if (points.size == 1) {
-            path.moveTo(points[0].x, points[0].y)
-            return path
-        }
+        appendSmooth(path, points, tension, startWithMove = true)
+        return path
+    }
 
-        path.moveTo(points[0].x, points[0].y)
+    /**
+     * Appends a smoothed run of points to an existing path.
+     *
+     * Kept separate from [smooth] so a band can run out along one series and
+     * back along another inside a *single* contour. Building it from two paths
+     * and `addPath` does not work: `addPath` begins a new subpath, which leaves
+     * the fill open and produces a stray wedge across the chart.
+     */
+    private fun appendSmooth(path: Path, points: List<Offset>, tension: Float, startWithMove: Boolean) {
+        if (points.isEmpty()) return
+        if (startWithMove) path.moveTo(points[0].x, points[0].y) else path.lineTo(points[0].x, points[0].y)
+        if (points.size == 1) return
+
         val scale = (1f - tension) / 6f
-
         for (i in 0 until points.size - 1) {
             val p0 = points[(i - 1).coerceAtLeast(0)]
             val p1 = points[i]
@@ -51,7 +60,6 @@ object Curves {
                 p2.y,
             )
         }
-        return path
     }
 
     /** The same curve, closed down to [baseline] so it can be filled. */
@@ -72,11 +80,9 @@ object Curves {
      */
     fun band(upper: List<Offset>, lower: List<Offset>, tension: Float = 0.12f): Path {
         if (upper.isEmpty() || lower.isEmpty()) return Path()
-        val path = smooth(upper, tension)
-        val reversed = lower.reversed()
-        path.lineTo(reversed.first().x, reversed.first().y)
-        val back = smooth(reversed, tension)
-        path.addPath(back)
+        val path = Path()
+        appendSmooth(path, upper, tension, startWithMove = true)
+        appendSmooth(path, lower.reversed(), tension, startWithMove = false)
         path.close()
         return path
     }

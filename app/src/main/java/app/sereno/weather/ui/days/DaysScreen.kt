@@ -3,6 +3,7 @@ package app.sereno.weather.ui.days
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -47,6 +48,7 @@ fun DaysScreen(
     Column(
         modifier = modifier
             .fillMaxWidth()
+            .statusBarsPadding()
             .verticalScroll(scrollState)
             .padding(horizontal = Space.pageMargin),
     ) {

@@ -385,16 +385,13 @@ private fun DrawScope.drawGlyph(glyph: Glyph, color: Color) {
             drawLine(color, Offset(6.5f, 6.5f), Offset(17.5f, 17.5f), strokeWidth = 1.8f, cap = StrokeCap.Round)
             drawLine(color, Offset(17.5f, 6.5f), Offset(6.5f, 17.5f), strokeWidth = 1.8f, cap = StrokeCap.Round)
         }
+        // Three sliders rather than a cogwheel. At 20dp a toothed circle
+        // collapses into an asterisk that is indistinguishable from the sun
+        // glyph sitting a few hundred pixels away on the same screen.
         Glyph.Gear -> {
-            drawCircle(color, radius = 3.1f, center = Offset(12f, 12f), style = stroke)
-            repeat(8) { index ->
-                val angle = index * 45f * PI.toFloat() / 180f
-                drawLine(
-                    color,
-                    Offset(12f + cos(angle) * 5.4f, 12f + sin(angle) * 5.4f),
-                    Offset(12f + cos(angle) * 7.6f, 12f + sin(angle) * 7.6f),
-                    strokeWidth = 1.8f, cap = StrokeCap.Round,
-                )
+            listOf(6.6f to 15.2f, 12f to 8.8f, 17.4f to 14.4f).forEach { (y, knobX) ->
+                drawLine(color, Offset(4f, y), Offset(20f, y), strokeWidth = 1.8f, cap = StrokeCap.Round)
+                drawCircle(color, radius = 2.5f, center = Offset(knobX, y), style = Stroke(1.8f))
             }
         }
         Glyph.Play -> drawPath(

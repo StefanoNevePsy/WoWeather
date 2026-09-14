@@ -109,10 +109,16 @@ fun HourlyRibbon(
         maxOf(2.0, window.maxOf { it.precipitation ?: 0.0 })
     }
 
+    // A dry day has nothing to put in the precipitation band, and an empty
+    // band leaves a hole under the curve. The chart simply gets shorter.
+    val dry = remember(window) {
+        window.none { (it.precipitation ?: 0.0) >= BlendedHour.WET_THRESHOLD_MM }
+    }
+
     Canvas(
         modifier = modifier
             .fillMaxWidth()
-            .height(RIBBON_HEIGHT.dp)
+            .height(if (dry) DRY_HEIGHT.dp else RIBBON_HEIGHT.dp)
             .pointerInput(window) {
                 detectTapGestures { offset ->
                     selectedIndex = indexFor(offset.x, size.width.toFloat(), window.size)
@@ -135,14 +141,15 @@ fun HourlyRibbon(
         fun centreX(index: Int) = step * (index + 0.5f)
 
         val tempTop = TEMP_TOP.dp.toPx()
-        val tempBottom = TEMP_BOTTOM.dp.toPx()
-        val precipBottom = PRECIP_BOTTOM.dp.toPx()
+        val tempBottom = (if (dry) DRY_TEMP_BOTTOM else TEMP_BOTTOM).dp.toPx()
         val precipTop = PRECIP_TOP.dp.toPx()
-        val axisY = AXIS_Y.dp.toPx()
+        val precipBottom = (if (dry) DRY_BASELINE else PRECIP_BOTTOM).dp.toPx()
+        val axisY = (if (dry) DRY_AXIS_Y else AXIS_Y).dp.toPx()
 
-        // 1. Night. A single wash rather than a per-hour stripe, so dusk reads
-        //    as a boundary instead of a staircase.
-        drawNightBands(window, step, size, atmosphere.ink(0.055f))
+        // 1. Night. One wash per run of dark hours rather than a per-hour
+        //    stripe, faded at both ends so dusk reads as a transition instead
+        //    of a hard-edged selection box.
+        drawNightBands(window, step, size.width, precipBottom, atmosphere.ink(0.05f))
 
         // 2. Likelihood of precipitation, behind the amounts.
         val probabilityPoints = window.mapIndexed { index, hour ->
@@ -159,6 +166,7 @@ fun HourlyRibbon(
         )
 
         // 3. Precipitation amount.
+        @Suppress("NAME_SHADOWING")
         val barWidth = (step * 0.36f).coerceAtMost(9.dp.toPx())
         window.forEachIndexed { index, hour ->
             val mm = hour.precipitation ?: 0.0
@@ -305,6 +313,12 @@ private const val PRECIP_TOP = 132f
 private const val PRECIP_BOTTOM = 176f
 private const val AXIS_Y = 186f
 
+// The shorter layout used when nothing falls in the whole window.
+private const val DRY_HEIGHT = 158f
+private const val DRY_TEMP_BOTTOM = 120f
+private const val DRY_BASELINE = 128f
+private const val DRY_AXIS_Y = 138f
+
 private fun indexFor(x: Float, width: Float, count: Int): Int {
     if (width <= 0f || count == 0) return -1
     val step = width / count
@@ -318,11 +332,18 @@ private fun positionForEpoch(epoch: Long, window: List<BlendedHour>, step: Float
     return (step * (hoursIn + 0.5f)).toFloat()
 }
 
-/** The wash that marks night hours. Merged into runs so dusk is one edge. */
+/**
+ * The wash that marks night hours.
+ *
+ * Contiguous dark hours are merged into one band, and each band fades in and
+ * out horizontally across roughly an hour at each end. Hard edges made this
+ * read as a highlighted selection rather than as nightfall.
+ */
 private fun DrawScope.drawNightBands(
     window: List<BlendedHour>,
     step: Float,
-    size: androidx.compose.ui.geometry.Size,
+    width: Float,
+    bottom: Float,
     color: Color,
 ) {
     var runStart = -1
@@ -332,11 +353,23 @@ private fun DrawScope.drawNightBands(
         val ends = !night || index == window.lastIndex
         if (ends && runStart >= 0) {
             val endIndex = if (night) index + 1 else index
-            drawRect(
-                color = color,
-                topLeft = Offset(step * runStart, 0f),
-                size = Size(step * (endIndex - runStart), size.height),
-            )
+            val left = step * runStart
+            val bandWidth = step * (endIndex - runStart)
+            if (bandWidth > 0f) {
+                val fade = (step * 1.1f / bandWidth).coerceAtMost(0.35f)
+                drawRect(
+                    brush = Brush.horizontalGradient(
+                        0f to Color.Transparent,
+                        fade to color,
+                        (1f - fade) to color,
+                        1f to Color.Transparent,
+                        startX = left,
+                        endX = left + bandWidth,
+                    ),
+                    topLeft = Offset(left, 0f),
+                    size = Size(bandWidth, bottom),
+                )
+            }
             runStart = -1
         }
     }
