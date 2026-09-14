@@ -1,6 +1,5 @@
 package app.sereno.weather.design
 
-import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.Easing
 import androidx.compose.animation.core.FiniteAnimationSpec
@@ -49,14 +48,14 @@ class Motion(private val reduced: Boolean) {
         else spring(dampingRatio = 1f, stiffness = Spring.StiffnessMedium)
 
     /** Opacity and colour. */
-    fun <T> fade(durationMs: Int = 260): AnimationSpec<T> =
+    fun <T> fade(durationMs: Int = 260): FiniteAnimationSpec<T> =
         tween(if (reduced) 0 else durationMs, easing = easeOut)
 
     /** Page-level transitions. */
-    fun <T> page(): AnimationSpec<T> = tween(if (reduced) 0 else 380, easing = easeOut)
+    fun <T> page(): FiniteAnimationSpec<T> = tween(if (reduced) 0 else 380, easing = easeOut)
 
     /** The progressive draw-in used by every chart. Skipped under reduce-motion. */
-    fun <T> draw(): AnimationSpec<T> = tween(if (reduced) 0 else 720, easing = easeOut)
+    fun <T> draw(): FiniteAnimationSpec<T> = tween(if (reduced) 0 else 720, easing = easeOut)
 
     /** Ambient, never-ending atmosphere motion (drifting light, rain). */
     val ambientEnabled: Boolean get() = !reduced
