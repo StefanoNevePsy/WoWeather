@@ -1,4 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="boot_background">#080D16</color>
+
+    <color name="widget_bg_start">#1A2433</color>
+    <color name="widget_bg_end">#0D1520</color>
+    <color name="widget_ink">#EDF2F8</color>
+    <color name="widget_ink_secondary">#A3B0BE</color>
+    <color name="widget_ink_tertiary">#6C7987</color>
+    <color name="widget_accent">#6BB6EC</color>
 </resources>

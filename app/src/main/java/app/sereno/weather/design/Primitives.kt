@@ -248,13 +248,13 @@ fun Skeleton(
     val transition = rememberInfiniteTransition(label = "skeleton")
     val pulse by if (motion.ambientEnabled) {
         transition.animateFloat(
-            initialValue = 0.045f,
-            targetValue = 0.11f,
+            initialValue = 0.035f,
+            targetValue = 0.085f,
             animationSpec = infiniteRepeatable(tween(1400, easing = motion.easeInOut), RepeatMode.Reverse),
             label = "pulse",
         )
     } else {
-        remember { androidx.compose.runtime.mutableFloatStateOf(0.07f) }
+        remember { androidx.compose.runtime.mutableFloatStateOf(0.055f) }
     }
 
     Box(

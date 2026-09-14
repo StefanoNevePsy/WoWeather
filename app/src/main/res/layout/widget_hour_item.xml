@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="0dp"
+    android:layout_height="wrap_content"
+    android:layout_weight="1"
+    android:gravity="center_horizontal"
+    android:orientation="vertical">
+
+    <TextView
+        android:id="@+id/hour_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/inter_medium"
+        android:includeFontPadding="false"
+        android:textColor="@color/widget_ink_tertiary"
+        android:textSize="11sp" />
+
+    <ImageView
+        android:id="@+id/hour_icon"
+        android:layout_width="22dp"
+        android:layout_height="22dp"
+        android:layout_marginTop="4dp"
+        android:importantForAccessibility="no" />
+
+    <TextView
+        android:id="@+id/hour_temperature"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:fontFamily="@font/inter_medium"
+        android:includeFontPadding="false"
+        android:textColor="@color/widget_ink"
+        android:textSize="13sp" />
+</LinearLayout>

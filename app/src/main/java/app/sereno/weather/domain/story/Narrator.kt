@@ -151,10 +151,19 @@ object Narrator {
         val cloudTo = later.cloud ?: return null
 
         return when {
+            later.thundery && !from.thundery ->
+                copy.t("temporali $partWhen", "thunderstorms $partWhen")
             later.precip >= 0.5 && from.precip < 0.3 ->
                 copy.t("piogge $partWhen", "rain $partWhen")
             from.precip >= 0.5 && later.precip < 0.2 ->
                 copy.t("$partWhen più asciutto", "drier $partWhen")
+            // Rain that merely eases still deserves a clause: "it keeps
+            // raining but less" is genuinely different news from "it keeps
+            // raining", and without this a wet day gets a one-clause sentence.
+            from.precip >= 0.8 && later.precip <= from.precip * 0.45 ->
+                copy.t("in attenuazione $partWhen", "easing $partWhen")
+            later.precip >= 0.8 && later.precip >= from.precip * 2.0 ->
+                copy.t("in intensificazione $partWhen", "turning wetter $partWhen")
             cloudTo - cloudFrom >= 28 ->
                 copy.t("nuvole in aumento $partWhen", "clouds building $partWhen")
             cloudFrom - cloudTo >= 28 ->
@@ -181,7 +190,16 @@ object Narrator {
         val startEpoch = wet.first().epochSeconds
         val endEpoch = wet.last().epochSeconds + 3600
         val spanHours = ((endEpoch - startEpoch) / 3600).toInt()
-        if (spanHours > 9) return null
+        if (spanHours > 9) {
+            // Too long to name a window, but saying nothing leaves the sentence
+            // thin on exactly the days it matters most.
+            val wetFraction = wet.size.toDouble() / hours.size.toDouble()
+            return if (wetFraction >= 0.55) {
+                copy.t("pioggia per gran parte della giornata", "rain for much of the day") to "~"
+            } else {
+                copy.t("pioggia a tratti", "showers on and off") to "~"
+            }
+        }
 
         val from = localHour(startEpoch)
         val to = localHour(endEpoch)

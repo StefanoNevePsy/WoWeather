@@ -1,6 +1,7 @@
 package app.sereno.weather.data.location
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
 import android.location.Geocoder
@@ -71,6 +72,10 @@ class LocationSource(private val context: Context) {
             label = reverseGeocode(location.latitude, location.longitude),
         )
 
+    // Every caller reaches this only after hasPermission() has returned true,
+    // and each call is additionally wrapped so a revoked permission surfaces as
+    // "no fix" rather than a crash. Lint cannot see across that guard.
+    @SuppressLint("MissingPermission")
     private fun lastKnown(manager: LocationManager): Location? {
         val providers = listOf(LocationManager.GPS_PROVIDER, LocationManager.NETWORK_PROVIDER, LocationManager.PASSIVE_PROVIDER)
         return providers.mapNotNull { provider ->

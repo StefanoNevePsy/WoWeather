@@ -280,11 +280,15 @@ private fun DaylightArc(
         ) {
             val inset = 10.dp.toPx()
             val baseline = size.height - 14.dp.toPx()
+            // The ellipse is sized from the canvas *height*, not its width.
+            // Deriving the rise from the width made the arc taller than the
+            // space allotted to it, and it drew over the section above.
+            val rise = baseline - 6.dp.toPx()
             val arcRect = Rect(
                 left = inset,
-                top = baseline - (size.width - inset * 2) * 0.30f,
+                top = baseline - rise,
                 right = size.width - inset,
-                bottom = baseline + (size.width - inset * 2) * 0.30f,
+                bottom = baseline + rise,
             )
 
             val arc = Path().apply { arcTo(arcRect, 180f, 180f, true) }

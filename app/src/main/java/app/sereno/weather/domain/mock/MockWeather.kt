@@ -45,8 +45,15 @@ object MockWeather {
         }
     }
 
+    /** Europe/Rome, which is what the mock place uses. */
+    private const val OFFSET_SECONDS = 7200L
+
     fun bundle(state: State, place: Place, nowEpoch: Long, copy: Copy): ForecastBundle {
         val hourZero = (nowEpoch / 3600) * 3600
+        // Daily aggregation, day labels and sunrise/sunset all key off day
+        // boundaries, so these have to be real local midnights rather than
+        // "now, a day later" — otherwise the mock reports sunrise at 17:00.
+        val localMidnight = ((hourZero + OFFSET_SECONDS) / 86_400) * 86_400 - OFFSET_SECONDS
         // Deterministic per state: the same mock always looks the same, which
         // matters when comparing a design change against a screenshot.
         val random = Random(state.ordinal * 7919)
@@ -72,7 +79,7 @@ object MockWeather {
                 model = model,
                 hourly = hours,
                 daily = (0 until 16).mapNotNull { d ->
-                    if (d * 24 >= horizon) null else dayPoint(state, hourZero, d, hours, bias)
+                    if (d * 24 >= horizon) null else dayPoint(state, localMidnight, d, hours, bias)
                 },
                 available = true,
             )
@@ -220,12 +227,12 @@ object MockWeather {
 
     private fun dayPoint(
         state: State,
-        hourZero: Long,
+        localMidnight: Long,
         dayIndex: Int,
         hours: List<HourPoint>,
         bias: Double,
     ): DayPoint {
-        val dayStart = hourZero + dayIndex * 24 * 3600L
+        val dayStart = localMidnight + dayIndex * 24 * 3600L
         val dayHours = hours.filter { it.epochSeconds in dayStart until (dayStart + 24 * 3600) }
         if (dayHours.isEmpty()) {
             return DayPoint(epochSeconds = dayStart)
@@ -241,8 +248,9 @@ object MockWeather {
             windDirectionDominant = 225.0 + bias,
             uvIndexMax = dayHours.mapNotNull { it.uvIndex }.maxOrNull(),
             weatherCode = dayHours.mapNotNull { it.weatherCode }.maxOrNull(),
-            sunriseEpoch = dayStart + 6 * 3600,
-            sunsetEpoch = dayStart + 20 * 3600,
+            // Local 06:40 and 19:50, expressed against local midnight.
+            sunriseEpoch = dayStart + 6 * 3600 + 40 * 60,
+            sunsetEpoch = dayStart + 19 * 3600 + 50 * 60,
         )
     }
 

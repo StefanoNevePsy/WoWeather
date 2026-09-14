@@ -2,9 +2,12 @@
 <data-extraction-rules>
     <cloud-backup>
         <include domain="sharedpref" path="." />
+        <include domain="file" path="." />
         <exclude domain="file" path="forecast-cache" />
     </cloud-backup>
     <device-transfer>
         <include domain="sharedpref" path="." />
+        <include domain="file" path="." />
+        <exclude domain="file" path="forecast-cache" />
     </device-transfer>
 </data-extraction-rules>

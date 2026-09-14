@@ -3,4 +3,16 @@
     <!-- Only used for the window background before Compose takes over. -->
     <color name="boot_background">#0B1220</color>
     <color name="launcher_background">#0E1728</color>
+
+    <!--
+      Widget palette. Widgets sit on the user's wallpaper rather than on our
+      backdrop, so they carry their own small version of the Sereno atmosphere
+      instead of inheriting one.
+    -->
+    <color name="widget_bg_start">#F2F5F8</color>
+    <color name="widget_bg_end">#DCE4ED</color>
+    <color name="widget_ink">#0F1B27</color>
+    <color name="widget_ink_secondary">#5A6774</color>
+    <color name="widget_ink_tertiary">#8B96A2</color>
+    <color name="widget_accent">#2E7BB8</color>
 </resources>

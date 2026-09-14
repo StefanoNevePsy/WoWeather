@@ -38,6 +38,11 @@ android {
                 keyAlias = "sereno"
                 keyPassword = "serenodev"
             }
+            // minSdk is 26, so the v1 JAR signature is dead weight; v2 and v3
+            // cover every device this app can be installed on.
+            enableV1Signing = false
+            enableV2Signing = true
+            enableV3Signing = true
         }
     }
 

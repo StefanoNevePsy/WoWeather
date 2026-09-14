@@ -1,5 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <full-backup-content>
+    <!--
+      Saved places and preferences are worth restoring onto a new device. The
+      forecast cache is not: it would restore stale weather, and it refills
+      itself on the first refresh anyway.
+    -->
     <include domain="sharedpref" path="." />
+    <include domain="file" path="." />
     <exclude domain="file" path="forecast-cache" />
 </full-backup-content>

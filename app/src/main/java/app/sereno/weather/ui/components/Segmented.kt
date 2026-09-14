@@ -30,6 +30,7 @@ import app.sereno.weather.design.Emphasis
 import app.sereno.weather.design.Pressable
 import app.sereno.weather.design.Radius
 import app.sereno.weather.design.SText
+import app.sereno.weather.design.Space
 import app.sereno.weather.design.Sereno
 import app.sereno.weather.design.Stroke
 
@@ -182,6 +183,7 @@ fun ToggleRow(
         modifier = modifier
             .fillMaxWidth()
             .heightIn(min = app.sereno.weather.design.Touch.min)
+            .padding(vertical = Space.sm)
             .semantics { contentDescription = label },
         verticalAlignment = Alignment.CenterVertically,
     ) {

@@ -93,13 +93,29 @@ object ConfidenceEngine {
         val lead = leadFactor(leadHours)
         drivers += ConfidenceDriver(ConfidenceFactor.LeadTime, lead, leadHours.toDouble(), 1f)
 
-        val score = (agreementScore * lead).coerceIn(0f, 1f)
+        // A hard ceiling on how confident too little evidence is allowed to make
+        // us. With one model every agreement term is vacuously perfect — there
+        // is nothing to disagree with — and the weighted sum alone happily
+        // reported "very high" for a single deterministic run. Scarcity of
+        // evidence has to cap the result, not merely discount it.
+        val score = (agreementScore * lead)
+            .coerceIn(0f, 1f)
+            .coerceAtMost(evidenceCeiling(modelCount))
         return Confidence(
             score = score,
             band = Confidence.bandFor(score),
             modelCount = modelCount,
             drivers = drivers,
         )
+    }
+
+    /** The most confidence a given number of models is ever allowed to justify. */
+    private fun evidenceCeiling(modelCount: Int): Float = when (modelCount) {
+        0 -> 0f
+        1 -> 0.55f
+        2 -> 0.76f
+        3 -> 0.88f
+        else -> 1f
     }
 
     /**

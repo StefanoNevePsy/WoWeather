@@ -22,7 +22,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
@@ -75,9 +75,11 @@ class MainActivity : ComponentActivity() {
  */
 @Composable
 fun SerenoApp(container: Container) {
-    val context = LocalContext.current
-    val deviceLanguage = remember {
-        Lang.fromTag(context.resources.configuration.locales[0]?.language ?: "en")
+    // Read through LocalConfiguration rather than Context.resources: the
+    // Compose local recomposes on a locale change, the Context field does not.
+    val configuration = LocalConfiguration.current
+    val deviceLanguage = remember(configuration) {
+        Lang.fromTag(configuration.locales[0]?.language ?: "en")
     }
 
     val viewModel: SerenoViewModel = viewModel(

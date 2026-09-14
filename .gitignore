@@ -9,4 +9,8 @@
 .cxx
 local.properties
 /app/build/
-/dist/
+
+
+# The release APK is committed under dist/ on purpose: it is the deliverable,
+# and a build environment is not always available to regenerate it.
+!/dist/
