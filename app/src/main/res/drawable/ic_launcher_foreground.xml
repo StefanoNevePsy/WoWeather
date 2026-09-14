@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Sereno mark: a low sun sitting on a horizon line, with a single cloud edge
+  above it. Drawn on the 108dp adaptive-icon canvas; the safe zone is the
+  central 66dp, so everything meaningful lives between 21 and 87.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- sun -->
+    <path
+        android:pathData="M54,44m-13,0a13,13 0,1 1,26 0a13,13 0,1 1,-26 0"
+        android:fillColor="#FFD9A0" />
+
+    <!-- horizon -->
+    <path
+        android:pathData="M30,62 L78,62"
+        android:strokeColor="#8FB6E3"
+        android:strokeWidth="4"
+        android:strokeLineCap="round" />
+    <path
+        android:pathData="M36,72 L72,72"
+        android:strokeColor="#8FB6E3"
+        android:strokeWidth="4"
+        android:strokeAlpha="0.55"
+        android:strokeLineCap="round" />
+
+    <!-- cloud edge -->
+    <path
+        android:pathData="M34,34 C34,27 40,23 45,25 C47,19 57,19 59,26"
+        android:strokeColor="#E8EEF7"
+        android:strokeWidth="4"
+        android:strokeAlpha="0.9"
+        android:strokeLineCap="round"
+        android:fillColor="@android:color/transparent" />
+</vector>

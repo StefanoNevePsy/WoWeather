@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+      Deliberately parented off the platform theme rather than a Material theme:
+      the whole UI is drawn by our own Compose design system, so all this needs
+      to do is get out of the way and hand us a transparent, edge-to-edge window.
+    -->
+    <style name="Theme.Sereno" parent="@android:style/Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/boot_background</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+        <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
+        <item name="android:windowActivityTransitions">true</item>
+    </style>
+</resources>
