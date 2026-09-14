@@ -15,6 +15,7 @@ import android.view.View
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import app.sereno.weather.data.ForecastResource
+import app.sereno.weather.data.net.Http
 import app.sereno.weather.data.prefs.SerenoSettings
 import app.sereno.weather.design.AtmosphericBackdrop
 import app.sereno.weather.design.Mood
@@ -27,6 +28,8 @@ import app.sereno.weather.i18n.Lang
 import app.sereno.weather.ui.AppState
 import app.sereno.weather.ui.Formatter
 import app.sereno.weather.ui.days.DaysScreen
+import app.sereno.weather.ui.debug.DebugScreen
+import app.sereno.weather.ui.map.MapScreen
 import app.sereno.weather.ui.daydetail.DayDetailScreen
 import app.sereno.weather.ui.lab.LabScreen
 import app.sereno.weather.ui.places.PlacesScreen
@@ -202,6 +205,26 @@ class ScreenshotTest {
                         onPrecipUnit = {}, onPressureUnit = {}, onLanguage = {},
                         onReduceMotion = {}, onRainNotifications = {},
                         onSevereNotifications = {}, onDeveloperMode = {}, onOpenDebug = {},
+                    )
+                },
+                // The map and the debug screen round out the set: neither is
+                // reachable from the others, and both would otherwise ship
+                // never having been composed once.
+                Shot("map", Mood.PartlyDay, ThemeMode.System) {
+                    MapScreen(
+                        state = partly,
+                        formatter = partly.formatter(),
+                        http = Http(File("build/tmp/test-http-cache").apply { mkdirs() }),
+                        nowEpoch = nowEpoch,
+                    )
+                },
+                Shot("debug", Mood.PartlyDay, ThemeMode.System) {
+                    DebugScreen(
+                        state = partly,
+                        formatter = partly.formatter(),
+                        nowEpoch = nowEpoch,
+                        onClose = {}, onMockState = {}, onClearCache = {}, onRefresh = {},
+                        cacheSize = { 0L },
                     )
                 },
                 Shot("loading", Mood.PartlyDay, ThemeMode.System) {

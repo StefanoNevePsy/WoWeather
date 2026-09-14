@@ -308,7 +308,7 @@ fun MapScreen(
                         style = Sereno.type.data,
                         maxLines = 1,
                     )
-                    Spacer(Modifier.height(Space.sm))
+                    if (current != null) Spacer(Modifier.height(Space.sm))
                     Timeline(
                         hourCount = current?.hourCount ?: 0,
                         index = hourIndex,
@@ -368,10 +368,9 @@ private fun Timeline(
     modifier: Modifier = Modifier,
 ) {
     val atmosphere = Sereno.atmosphere
-    if (hourCount <= 1) {
-        Box(modifier.fillMaxWidth().height(26.dp))
-        return
-    }
+    // With nothing to scrub, reserve no space at all: an empty 26dp box pushed
+    // the status text off-centre against the play button beside it.
+    if (hourCount <= 1) return
 
     Canvas(
         modifier
